@@ -8,7 +8,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -18,7 +18,7 @@ export default function Navbar() {
           <Typography
             variant="h5"
             component={Link}
-            to="/"
+            to="/home"
             sx={{
               mr: 2,
               fontWeight: 700,

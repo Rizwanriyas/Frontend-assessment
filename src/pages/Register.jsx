@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Container, TextField, Button, Typography, Box, Paper, Avatar, Link } from "@mui/material";
+import { Container, TextField, Button, Typography, Box, Paper, Avatar, CircularProgress } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { PersonAddAlt1 } from "@mui/icons-material";
@@ -10,14 +10,18 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false); // loader state
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true); // start loader
     try {
       await register(name, email, password);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       alert(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false); // stop loader
     }
   };
 
@@ -87,9 +91,11 @@ export default function Register() {
               borderRadius: 1,
               textTransform: "none",
               fontSize: "1rem",
+              position: "relative",
             }}
+            disabled={loading} // disable button while loading
           >
-            Register
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Register"}
           </Button>
         </Box>
       </Paper>

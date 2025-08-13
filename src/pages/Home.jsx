@@ -18,6 +18,7 @@ import {
   Divider,
   Stack,
   Paper,
+  CircularProgress,
 } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +29,8 @@ export default function Home() {
   const [events, setEvents] = useState([]);
   const [addedProducts, setAddedProducts] = useState([]);
   const [bookedEvents, setBookedEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -53,19 +56,28 @@ export default function Home() {
   useEffect(() => {
     if (!user) return;
 
-    (async () => {
-      const productsRes = await api.get("/products");
-      setProducts(productsRes.data);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const productsRes = await api.get("/products");
+        setProducts(productsRes.data);
 
-      const eventsRes = await api.get("/events");
-      setEvents(eventsRes.data);
+        const eventsRes = await api.get("/events");
+        setEvents(eventsRes.data);
 
-      const cartRes = await api.get("/me/cart");
-      setAddedProducts(cartRes.data.map((p) => p._id));
+        const cartRes = await api.get("/me/cart");
+        setAddedProducts(cartRes.data.map((p) => p._id));
 
-      const bookedRes = await api.get("/me/events");
-      setBookedEvents(bookedRes.data.map((e) => e._id));
-    })();
+        const bookedRes = await api.get("/me/events");
+        setBookedEvents(bookedRes.data.map((e) => e._id));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [user]);
 
   const handlePlaceOrderClick = (product) => {
@@ -121,98 +133,105 @@ export default function Home() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* PRODUCTS SECTION */}
-      <Paper elevation={0} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
-        <Typography variant="h4" sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
-          <ShoppingCart fontSize="large" /> Featured Products
-        </Typography>
-        <Divider sx={{ mb: 3 }} />
-        <Grid container spacing={3}>
-          {products.map((p) => (
-            <Grid item xs={12} sm={6} md={4} key={p._id}>
-              <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                {p.image && (
-                  <CardMedia component="img" height="200" image={p.image} alt={p.name} sx={{ objectFit: "cover" }} />
-                )}
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography gutterBottom variant="h6" component="h3">
-                    {p.name}
-                  </Typography>
-                  <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                    <Chip label={`$${p.price}`} color="primary" size="small" />
-                    {p.category && <Chip label={p.category} size="small" variant="outlined" />}
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {p.description}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  {addedProducts.includes(p._id) ? (
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="success"
-                      startIcon={<ShoppingCart />}
-                      onClick={() => navigate("/dashboard")}
-                    >
-                      View in Cart
-                    </Button>
-                  ) : (
-                    <Button fullWidth variant="contained" onClick={() => handlePlaceOrderClick(p)}>
-                      Add to Cart
-                    </Button>
-                  )}
-                </CardActions>
-              </Card>
+      {loading ? (
+        <Stack alignItems="center" justifyContent="center" sx={{ mt: 10 }}>
+          <CircularProgress size={60} />
+        </Stack>
+      ) : (
+        <>
+          <Paper elevation={0} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
+            <Typography variant="h4" sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
+              <ShoppingCart fontSize="large" /> Featured Products
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            <Grid container spacing={3}>
+              {products.map((p) => (
+                <Grid item xs={12} sm={6} md={4} key={p._id}>
+                  <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    {p.image && (
+                      <CardMedia component="img" height="200" image={p.image} alt={p.name} sx={{ objectFit: "cover" }} />
+                    )}
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Typography gutterBottom variant="h6" component="h3">
+                        {p.name}
+                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                        <Chip label={`$${p.price}`} color="primary" size="small" />
+                        {p.category && <Chip label={p.category} size="small" variant="outlined" />}
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        {p.description}
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      {addedProducts.includes(p._id) ? (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          color="success"
+                          startIcon={<ShoppingCart />}
+                          onClick={() => navigate("/dashboard")}
+                        >
+                          View in Order
+                        </Button>
+                      ) : (
+                        <Button fullWidth variant="contained" onClick={() => handlePlaceOrderClick(p)}>
+                          Add to Cart
+                        </Button>
+                      )}
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      </Paper>
+          </Paper>
 
-      {/* EVENTS SECTION */}
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-        <Typography variant="h4" sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
-          <EventAvailable fontSize="large" /> Upcoming Events
-        </Typography>
-        <Divider sx={{ mb: 3 }} />
-        <Grid container spacing={3}>
-          {events.map((e) => (
-            <Grid item xs={12} sm={6} md={4} key={e._id}>
-              <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography gutterBottom variant="h6" component="h3">
-                    {e.title}
-                  </Typography>
-                  <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-                    <Chip label={new Date(e.date).toLocaleDateString()} size="small" />
-                    <Chip label={e.location} size="small" variant="outlined" />
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {e.description}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  {bookedEvents.includes(e._id) ? (
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="success"
-                      startIcon={<EventAvailable />}
-                      onClick={() => navigate("/dashboard")}
-                    >
-                      View Tickets
-                    </Button>
-                  ) : (
-                    <Button fullWidth variant="contained" onClick={() => handleBookTicket(e)}>
-                      Book Now
-                    </Button>
-                  )}
-                </CardActions>
-              </Card>
+          {/* EVENTS SECTION */}
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
+            <Typography variant="h4" sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
+              <EventAvailable fontSize="large" /> Upcoming Events
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            <Grid container spacing={3}>
+              {events.map((e) => (
+                <Grid item xs={12} sm={6} md={4} key={e._id}>
+                  <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Typography gutterBottom variant="h6" component="h3">
+                        {e.title}
+                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                        <Chip label={new Date(e.date).toLocaleDateString()} size="small" />
+                        <Chip label={e.location} size="small" variant="outlined" />
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        {e.description}
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      {bookedEvents.includes(e._id) ? (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          color="success"
+                          startIcon={<EventAvailable />}
+                          onClick={() => navigate("/dashboard")}
+                        >
+                          View Tickets
+                        </Button>
+                      ) : (
+                        <Button fullWidth variant="contained" onClick={() => handleBookTicket(e)}>
+                          Book Now
+                        </Button>
+                      )}
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      </Paper>
-
+          </Paper>
+        </>
+      )}
       {/* PRODUCT ORDER MODAL */}
       <Dialog open={openProductModal} onClose={() => setOpenProductModal(false)} maxWidth="sm" fullWidth>
         <DialogTitle>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Container, TextField, Button, Typography, Box, Paper, Avatar, Link } from "@mui/material";
+import { Container, TextField, Button, Typography, Box, Paper, Avatar, CircularProgress } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { LockOutlined } from "@mui/icons-material";
@@ -9,14 +9,18 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await login(email, password);
-      navigate("/");
+      navigate("/home");
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,9 +79,12 @@ export default function Login() {
               borderRadius: 1,
               textTransform: "none",
               fontSize: "1rem",
+              display: "flex",
+              justifyContent: "center",
             }}
+            disabled={loading}
           >
-            Sign In
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
           </Button>
         </Box>
       </Paper>
