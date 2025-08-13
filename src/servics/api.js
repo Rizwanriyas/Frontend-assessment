@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://backend-assessment-xlen.onrender.com/api",
+  baseURL:  "https://backend-assessment-xlen.onrender.com/api",
 });
 
 api.interceptors.request.use((config) => {

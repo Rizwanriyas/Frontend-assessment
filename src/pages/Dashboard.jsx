@@ -12,9 +12,9 @@ import {
   Paper,
   Chip,
   Grid,
-  Button,
   Box,
   Badge,
+  CircularProgress,
 } from "@mui/material";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ShoppingCart, Event, LocalShipping, CalendarToday, LocationOn } from "@mui/icons-material";
@@ -22,6 +22,7 @@ import { ShoppingCart, Event, LocalShipping, CalendarToday, LocationOn } from "@
 export default function Dashboard() {
   const [cart, setCart] = useState([]);
   const [events, setEvents] = useState([]);
+  const [loadingData, setLoadingData] = useState(true); // new loading state
   const { user, loading } = useAuth();
 
   useEffect(() => {
@@ -29,16 +30,32 @@ export default function Dashboard() {
     if (!user) return;
 
     (async () => {
-      const cartRes = await api.get("/me/cart");
-      setCart(cartRes.data);
-      const eventsRes = await api.get("/me/events");
-      setEvents(eventsRes.data);
+      setLoadingData(true);
+      try {
+        const cartRes = await api.get("/me/cart");
+        setCart(cartRes.data);
+        const eventsRes = await api.get("/me/events");
+        setEvents(eventsRes.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingData(false);
+      }
     })();
   }, [user, loading]);
 
   const calculateTotal = () => {
     return cart.reduce((sum, item) => sum + item.price, 0).toFixed(2);
   };
+
+  // show loading spinner if auth or data is loading
+  if (loading || loadingData) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
+        <CircularProgress size={60} />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
